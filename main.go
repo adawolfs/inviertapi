@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"os"
 )
 
 const (
@@ -17,6 +18,10 @@ type Response struct {
 }
 
 func main() {
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		targetURL, err := url.Parse(targetAPI + r.URL.Path)
 		if err != nil {
@@ -74,5 +79,5 @@ func main() {
 	})
 
 	// Start the server
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
