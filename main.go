@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 )
 
 const (
@@ -63,17 +64,21 @@ func main() {
 				fmt.Println("Error:", err)
 				return
 			}
-			var images []interface{}
-			for gallery := range item["galleries"].([]interface{}) {
-				for iKey, image := range item["galleries"].([]interface{})[gallery].(map[string]interface{}) {
-					if iKey == "id" {
-						continue
+
+			if strings.Contains(r.URL.Path, "/v1/property") {
+				var images []interface{}
+				for gallery := range item["galleries"].([]interface{}) {
+					for iKey, image := range item["galleries"].([]interface{})[gallery].(map[string]interface{}) {
+						if iKey == "id" {
+							continue
+						}
+						images = append(images, image)
 					}
-					images = append(images, image)
 				}
+				delete(item, "galleries")
+				item["images"] = images
 			}
-			delete(item, "galleries")
-			item["images"] = images
+
 			items = append(items, item)
 		}
 
