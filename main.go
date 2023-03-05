@@ -18,12 +18,28 @@ type Response struct {
 	Items []map[string]interface{} `json:"items"`
 }
 
+func handleProperty(item map[string]interface{}) map[string]interface{} {
+	var images []interface{}
+	for gallery := range item["galleries"].([]interface{}) {
+		for iKey, image := range item["galleries"].([]interface{})[gallery].(map[string]interface{}) {
+			if iKey == "id" {
+				continue
+			}
+			images = append(images, image)
+		}
+	}
+	delete(item, "galleries")
+	item["images"] = images
+	return item
+}
+
 func main() {
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		transformedJSON := []byte(`{}`)
 		targetURL, err := url.Parse(targetAPI + r.URL.Path)
 		if err != nil {
 			http.Error(w, "Invalid target URL", http.StatusInternalServerError)
@@ -43,51 +59,66 @@ func main() {
 		defer targetResp.Body.Close()
 
 		defer targetResp.Body.Close()
-		var data map[string]json.RawMessage
+		var data json.RawMessage
 		err = json.NewDecoder(targetResp.Body).Decode(&data)
 		if err != nil {
 			fmt.Println("Error:", err)
 			return
 		}
-
 		var items []map[string]interface{}
-		for key, value := range data {
-			if key == "total" {
-				continue
-			}
-			if key == "status" {
-				continue
-			}
+
+		if strings.Contains(r.URL.Path, "/v1/property/get") {
 			var item map[string]interface{}
-			err := json.Unmarshal(value, &item)
+			err := json.Unmarshal(data, &item)
+			if err != nil {
+				fmt.Println("Error:", err)
+				return
+			}
+			item = handleProperty(item)
+			items = append(items, item)
+			transformedResponse := Response{Items: items}
+			transformedJSON, err = json.Marshal(transformedResponse)
 			if err != nil {
 				fmt.Println("Error:", err)
 				return
 			}
 
-			if strings.Contains(r.URL.Path, "/v1/property") {
-				var images []interface{}
-				for gallery := range item["galleries"].([]interface{}) {
-					for iKey, image := range item["galleries"].([]interface{})[gallery].(map[string]interface{}) {
-						if iKey == "id" {
-							continue
-						}
-						images = append(images, image)
-					}
-				}
-				delete(item, "galleries")
-				item["images"] = images
+		} else {
+			var data_map map[string]json.RawMessage
+			err := json.Unmarshal(data, &data_map)
+			if err != nil {
+				fmt.Println("Error:", err)
+				return
 			}
 
-			items = append(items, item)
+			for key, value := range data_map {
+				if key == "total" {
+					continue
+				}
+				if key == "status" {
+					continue
+				}
+				var item map[string]interface{}
+				err := json.Unmarshal(value, &item)
+				if err != nil {
+					fmt.Println("Error:", err)
+					return
+				}
+
+				if strings.Contains(r.URL.Path, "/v1/property") {
+					item = handleProperty(item)
+				}
+
+				items = append(items, item)
+				transformedResponse := Response{Items: items}
+				transformedJSON, err = json.Marshal(transformedResponse)
+				if err != nil {
+					fmt.Println("Error:", err)
+					return
+				}
+			}
 		}
 
-		transformedResponse := Response{Items: items}
-		transformedJSON, err := json.Marshal(transformedResponse)
-		if err != nil {
-			fmt.Println("Error:", err)
-			return
-		}
 		// Return as JSON
 		w.Header().Set("Content-Type", "application/json")
 
