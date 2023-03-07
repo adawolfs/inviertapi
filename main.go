@@ -20,21 +20,19 @@ type Response struct {
 
 func handleProperty(item map[string]interface{}) map[string]interface{} {
 	var images []interface{}
-	var mainImage map[string]interface{} = nil
 	for gallery := range item["galleries"].([]interface{}) {
 		for iKey, image := range item["galleries"].([]interface{})[gallery].(map[string]interface{}) {
 			if iKey == "id" {
 				continue
 			}
-			if mainImage == nil {
-				mainImage = image.(map[string]interface{})
-			}
-			images = append(images, image)
+			images = append(images, image.(map[string]interface{})["url_original"])
+			item["image_"+iKey] = image.(map[string]interface{})["url_original"]
 		}
 	}
-	delete(item, "galleries")
-	item["image"] = mainImage["url_original"]
+	item["image"] = item["main_image"].(map[string]interface{})["url_original"]
 	item["images"] = images
+	delete(item, "galleries")
+	delete(item, "main_image")
 	return item
 }
 
