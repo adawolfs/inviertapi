@@ -86,6 +86,31 @@ func main() {
 				return
 			}
 
+		} else if strings.Contains(r.URL.Path, "/v1/property-type/all") {
+			var data_map map[string]json.RawMessage
+			err := json.Unmarshal(data, &data_map)
+			if err != nil {
+				fmt.Println("Error:", err)
+				return
+			}
+			for key, value := range data_map {
+				if key == "status" {
+					continue
+				}
+				var item map[string]interface{}
+				err := json.Unmarshal(value, &item)
+				if err != nil {
+					fmt.Println("Error:", err)
+					return
+				}
+				items = append(items, item)
+			}
+			transformedResponse := Response{Items: items}
+			transformedJSON, err = json.Marshal(transformedResponse)
+			if err != nil {
+				fmt.Println("Error:", err)
+				return
+			}
 		} else {
 			var data_map map[string]json.RawMessage
 			err := json.Unmarshal(data, &data_map)
