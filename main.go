@@ -25,11 +25,11 @@ func handleProperty(item map[string]interface{}) map[string]interface{} {
 			if iKey == "id" {
 				continue
 			}
-			images = append(images, image.(map[string]interface{})["url_original"])
-			item["image_"+iKey] = image.(map[string]interface{})["url_original"]
+			images = append(images, image.(map[string]interface{})["url_big"])
+			item["image_"+iKey] = image.(map[string]interface{})["url_big"]
 		}
 	}
-	item["image"] = item["main_image"].(map[string]interface{})["url_original"]
+	item["image"] = item["main_image"].(map[string]interface{})["url_big"]
 	item["images"] = images
 	delete(item, "galleries")
 	delete(item, "main_image")
